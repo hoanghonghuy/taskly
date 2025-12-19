@@ -1,0 +1,54 @@
+# IDE / editor
+.windsurf/
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse / Spring Tool Suite
+.classpath
+.project
+.settings/
+.springBeans
+.factorypath
+.apt_generated/
+.sts4-cache/
+
+# Maven / Java builds
+**/target/
+*.class
+
+# Maven Wrapper
+**/.mvn/wrapper/maven-wrapper.jar
+
+# NetBeans
+**/nbproject/private/
+**/nbbuild/
+**/dist/
+**/nbdist/
+**/.nb-gradle/
+
+# Gradle
+**/build/
+
+# Logs
+*.log
+
+# Local env / secrets
+.env
+.env.*
+*.env
+
+# Spring Boot local overrides
+**/application-local.properties
+**/application-local.yml
+**/application-local.yaml
+
+# Spring Initializr helper
+**/HELP.md
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
