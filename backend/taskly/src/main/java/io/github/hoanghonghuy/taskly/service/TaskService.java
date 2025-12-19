@@ -53,8 +53,14 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true) // Chỉ đọc dữ liệu
-    public List<TaskResponse> getAllTasks() {
-        return taskRepository.findAll().stream().map(this::toResponse).toList();
+    public List<TaskResponse> getTasks(Boolean completed) {
+        List<Task> tasks;
+        if (completed == null) {
+            tasks = taskRepository.findAll();
+        } else {
+            tasks = taskRepository.findByCompleted(completed);
+        }
+        return tasks.stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -97,4 +103,5 @@ public class TaskService {
         }
         taskRepository.deleteById(id);
     }
+
 }
