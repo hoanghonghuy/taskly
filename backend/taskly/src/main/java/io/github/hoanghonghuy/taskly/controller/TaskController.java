@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.github.hoanghonghuy.taskly.dto.task.CreateTaskRequest;
 import io.github.hoanghonghuy.taskly.dto.task.TaskResponse;
 import io.github.hoanghonghuy.taskly.dto.task.UpdateTaskRequest;
+import io.github.hoanghonghuy.taskly.entity.Priority;
 import io.github.hoanghonghuy.taskly.service.TaskService;
 import jakarta.validation.Valid;
 
@@ -25,9 +26,9 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/tasks")
 @Validated
 public class TaskController {
-    
+
     private final TaskService taskService;
-    
+
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
@@ -40,9 +41,10 @@ public class TaskController {
 
     @GetMapping
     public List<TaskResponse> getTasks(
-        @RequestParam(required = false) Boolean completed, 
-        @RequestParam(required = false) String q) {
-        return taskService.getTasks(completed, q);
+            @RequestParam(required = false) Boolean completed,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) String q) {
+        return taskService.getTasks(completed, priority, q);
     }
 
     @GetMapping("/{id}")
@@ -54,6 +56,7 @@ public class TaskController {
     public TaskResponse updateTask(@PathVariable long id, @Valid @RequestBody UpdateTaskRequest request) {
         return taskService.updateTask(id, request);
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable long id) {
         taskService.deleteTask(id);
