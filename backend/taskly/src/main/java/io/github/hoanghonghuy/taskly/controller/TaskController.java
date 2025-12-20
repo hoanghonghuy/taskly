@@ -39,8 +39,10 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskResponse> getTasks(@RequestParam(required = false) Boolean completed) {
-        return taskService.getTasks(completed);
+    public List<TaskResponse> getTasks(
+        @RequestParam(required = false) Boolean completed, 
+        @RequestParam(required = false) String q) {
+        return taskService.getTasks(completed, q);
     }
 
     @GetMapping("/{id}")

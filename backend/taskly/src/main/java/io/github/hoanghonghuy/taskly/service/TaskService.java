@@ -53,13 +53,14 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true) // Chỉ đọc dữ liệu
-    public List<TaskResponse> getTasks(Boolean completed) {
-        List<Task> tasks;
-        if (completed == null) {
-            tasks = taskRepository.findAll();
-        } else {
-            tasks = taskRepository.findByCompleted(completed);
+    public List<TaskResponse> getTasks(Boolean completed, String q) {
+        String pattern = null;
+        if (q != null && !q.isBlank()) {
+            String qNormalized = q.trim().toLowerCase();
+            pattern = "%" + qNormalized + "%";
         }
+
+        List<Task> tasks = taskRepository.searchTasks(completed, pattern);
         return tasks.stream().map(this::toResponse).toList();
     }
 
