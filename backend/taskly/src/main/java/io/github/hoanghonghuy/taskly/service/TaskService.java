@@ -1,5 +1,6 @@
 package io.github.hoanghonghuy.taskly.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -53,14 +54,57 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true) // Chỉ đọc dữ liệu
-    public List<TaskResponse> getTasks(Boolean completed, Priority priority, String q) {
+    public List<TaskResponse> getTasks(Boolean completed, Priority priority, String q, String view, LocalDate dueFrom, LocalDate dueTo) {
         String pattern = null;
         if (q != null && !q.isBlank()) {
             String qNormalized = q.trim().toLowerCase();
             pattern = "%" + qNormalized + "%";
         }
 
-        List<Task> tasks = taskRepository.searchTasks(completed, priority, pattern);
+        LocalDate baseFrom = null;
+        LocalDate baseTo = null;
+        if (view != null && !view.isBlank()) {
+            LocalDate today = LocalDate.now();
+            String v = view.trim().toLowerCase();
+
+            if (completed == null) {
+                completed = false; // Mặc định chỉ lấy công việc chưa hoàn thành khi sử dụng view
+            }
+            switch (v) {
+                case "today":
+                    baseFrom = today;
+                    baseTo = today;
+                    break;
+                case "upcoming":
+                    baseFrom = today;
+                    baseTo = null;
+                    break;
+                case "overdue":
+                    baseFrom = null;
+                    baseTo = today.minusDays(1);
+                    break;
+                default:
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid view parameter: " + view);
+            }
+        }
+
+        LocalDate effectiveFrom = baseFrom;
+        LocalDate effectiveTo = baseTo;
+
+        if (dueFrom != null) {
+            effectiveFrom = dueFrom;
+        }
+        if (dueTo != null) {
+            effectiveTo = dueTo;
+        }
+
+        // Kiểm tra tính hợp lệ của khoảng ngày, nếu cả hai đều không null và from > to thì lỗi
+        if (effectiveFrom != null && effectiveTo != null && effectiveFrom.isAfter(effectiveTo)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid due date range: dueFrom is after dueTo");
+        }
+
+
+        List<Task> tasks = taskRepository.searchTasks(completed, priority, effectiveFrom, effectiveTo, pattern);
         return tasks.stream().map(this::toResponse).toList();
     }
 

@@ -1,7 +1,9 @@
 package io.github.hoanghonghuy.taskly.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -43,8 +45,11 @@ public class TaskController {
     public List<TaskResponse> getTasks(
             @RequestParam(required = false) Boolean completed,
             @RequestParam(required = false) Priority priority,
-            @RequestParam(required = false) String q) {
-        return taskService.getTasks(completed, priority, q);
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String view,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueTo) {
+        return taskService.getTasks(completed, priority, q, view, dueFrom, dueTo);
     }
 
     @GetMapping("/{id}")

@@ -1,5 +1,6 @@
 package io.github.hoanghonghuy.taskly.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,6 +32,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             select t from Task t
             where (:completed is null or t.completed = :completed)
               and (:priority is null or t.priority = :priority)
+              and (:dueFrom is null or t.dueDate >= :dueFrom)
+              and (:dueTo is null or t.dueDate <= :dueTo)
               and (
                 :pattern is null
                 or lower(t.title) like :pattern
@@ -40,5 +43,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> searchTasks(
             @Param("completed") Boolean completed,
             @Param("priority") Priority priority,
+            @Param("dueFrom") LocalDate dueFrom,
+            @Param("dueTo") LocalDate dueTo,
             @Param("pattern") String pattern);
 }
