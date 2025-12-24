@@ -1,6 +1,7 @@
 package io.github.hoanghonghuy.taskly.service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,21 +16,24 @@ import io.github.hoanghonghuy.taskly.dto.task.CreateTaskRequest;
 import io.github.hoanghonghuy.taskly.dto.task.TaskResponse;
 import io.github.hoanghonghuy.taskly.dto.task.UpdateTaskRequest;
 import io.github.hoanghonghuy.taskly.entity.Priority;
+import io.github.hoanghonghuy.taskly.entity.Project;
 import io.github.hoanghonghuy.taskly.entity.Task;
 import io.github.hoanghonghuy.taskly.entity.User;
+import io.github.hoanghonghuy.taskly.repository.ProjectRepository;
 import io.github.hoanghonghuy.taskly.repository.TaskRepository;
 import io.github.hoanghonghuy.taskly.repository.UserRepository;
-import lombok.NonNull;
 
 @Service
 public class TaskService {
 
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
 
-    public TaskService(TaskRepository taskRepository, UserRepository userRepository) {
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
+        this.projectRepository = projectRepository;
     }
 
     private TaskResponse toResponse(Task task) {
@@ -40,6 +44,9 @@ public class TaskService {
         response.setCompleted(task.isCompleted());
         response.setPriority(task.getPriority());
         response.setDueDate(task.getDueDate());
+        if (task.getProject() != null) {
+            response.setProjectId(task.getProject().getId());
+        }
         response.setCreatedAt(task.getCreatedAt());
         response.setUpdatedAt(task.getUpdatedAt());
         return response;
@@ -61,6 +68,13 @@ public class TaskService {
             task.setPriority(request.getPriority());
         }
         task.setDueDate(request.getDueDate());
+        
+        if (request.getProjectId() != null) {
+            Project project = projectRepository.findByIdAndOwnerId(request.getProjectId(), ownerId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+            task.setProject(project);
+        }
+        
         Task savedTask = taskRepository.save(task);
 
         return toResponse(savedTask);
@@ -69,6 +83,7 @@ public class TaskService {
     @Transactional(readOnly = true) // Chỉ đọc dữ liệu
     public Page<TaskResponse> getTasks(
             long ownerId,
+            Long projectId,
             Boolean completed,
             Priority priority,
             String q,
@@ -78,7 +93,7 @@ public class TaskService {
             int page,
             int size,
             String sortBy,
-            @NonNull String sortDir) {
+            String sortDir) {
         
         String pattern = null;
         if (q != null && !q.isBlank()) {
@@ -132,6 +147,7 @@ public class TaskService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<Task> tasks = taskRepository.searchTasks(ownerId, 
+            projectId,
             completed, 
             priority, 
             effectiveFrom, 
@@ -171,6 +187,17 @@ public class TaskService {
         }
         if (request.getDueDate() != null) {
             task.setDueDate(request.getDueDate());
+        }
+        
+        if (request.getProjectId() != null) {
+             Project project = projectRepository.findByIdAndOwnerId(request.getProjectId(), ownerId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+            task.setProject(project);
+        } else {
+            // Logic: nếu gửi projectId = null thì có thể hiểu là move về Inbox (hoặc không đổi - tuỳ logic)
+            // Ở đây giả sử update request có field này thì update, nếu không gửi thì không update. 
+            // Nếu muốn clear project (move to Inbox), client có thể gửi id=-1 hoặc logic khác.
+            // Tạm thời để đơn giản: không update nếu null.
         }
 
         // Task updatedTask = taskRepository.save(task);

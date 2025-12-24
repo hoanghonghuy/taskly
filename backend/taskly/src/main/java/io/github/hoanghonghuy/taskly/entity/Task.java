@@ -2,10 +2,25 @@ package io.github.hoanghonghuy.taskly.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import jakarta.persistence.*;
-import lombok.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -44,4 +59,8 @@ public class Task {
     @ManyToOne(fetch = FetchType.LAZY, optional = false) // Nhiều Task thuộc về một User
     @JoinColumn(name = "owner_id", nullable = false) // khóa ngoại tới bảng users
     private User owner;
+
+    @ManyToOne(fetch = FetchType.LAZY) // Nhiều Task thuộc về một Project (có thể null nếu là Inbox)
+    @JoinColumn(name = "project_id") // khóa ngoại tới bảng projects
+    private Project project;
 }

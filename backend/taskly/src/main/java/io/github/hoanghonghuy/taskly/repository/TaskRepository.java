@@ -35,6 +35,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             select t from Task t
             where (:completed is null or t.completed = :completed)
               and (t.owner.id = :ownerId)
+              and (:projectId is null or t.project.id = :projectId)
               and (:priority is null or t.priority = :priority)
               and (:dueFrom is null or t.dueDate >= :dueFrom)
               and (:dueTo is null or t.dueDate <= :dueTo)
@@ -46,6 +47,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             """)
     Page<Task> searchTasks(
             @Param("ownerId") long ownerId,
+            @Param("projectId") Long projectId,
             @Param("completed") Boolean completed,
             @Param("priority") Priority priority,
             @Param("dueFrom") LocalDate dueFrom,

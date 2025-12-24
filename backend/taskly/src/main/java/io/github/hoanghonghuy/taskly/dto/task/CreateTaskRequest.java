@@ -3,12 +3,11 @@ package io.github.hoanghonghuy.taskly.dto.task;
 import java.time.LocalDate;
 
 import io.github.hoanghonghuy.taskly.entity.Priority;
-import lombok.Getter;
-import lombok.Setter;
-
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -25,4 +24,6 @@ public class CreateTaskRequest {
 
     @FutureOrPresent(message = "Due date must be today or in the future")   
     private LocalDate dueDate;
+
+    private Long projectId;
 }

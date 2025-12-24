@@ -13,9 +13,10 @@ public class TaskResponse {
     private Long id;
     private String title;
     private String description;
-    private boolean completed; 
+    private boolean completed;
     private Priority priority;
     private LocalDate dueDate;
+    private Long projectId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
