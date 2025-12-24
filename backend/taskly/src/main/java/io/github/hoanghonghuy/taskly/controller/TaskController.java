@@ -48,6 +48,7 @@ public class TaskController {
     @GetMapping
     public Page<TaskResponse> getTasks(
             JwtAuthenticationToken auth,
+            @RequestParam(required = false) Long projectId,
             @RequestParam(required = false) Boolean completed,
             @RequestParam(required = false) Priority priority,
             @RequestParam(required = false) String q,
@@ -60,7 +61,7 @@ public class TaskController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         
         long ownerId = Long.parseLong(auth.getName());
-        return taskService.getTasks(ownerId, completed, priority, q, view, dueFrom, dueTo, page, size, sortBy, sortDir);
+        return taskService.getTasks(ownerId, projectId, completed, priority, q, view, dueFrom, dueTo, page, size, sortBy, sortDir);
     }
 
     @GetMapping("/{id}")
