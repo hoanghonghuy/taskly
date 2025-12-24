@@ -1,8 +1,11 @@
 package io.github.hoanghonghuy.taskly.service;
 
 import java.time.LocalDate;
-import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +19,7 @@ import io.github.hoanghonghuy.taskly.entity.Task;
 import io.github.hoanghonghuy.taskly.entity.User;
 import io.github.hoanghonghuy.taskly.repository.TaskRepository;
 import io.github.hoanghonghuy.taskly.repository.UserRepository;
+import lombok.NonNull;
 
 @Service
 public class TaskService {
@@ -23,7 +27,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
     }
@@ -45,7 +49,7 @@ public class TaskService {
     public TaskResponse createTask(long ownerId, 
     CreateTaskRequest request) {
         User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + ownerId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
         Task task = new Task();
         task.setOwner(owner);
@@ -63,14 +67,19 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true) // Chỉ đọc dữ liệu
-    public List<TaskResponse> getTasks(
+    public Page<TaskResponse> getTasks(
             long ownerId,
             Boolean completed,
             Priority priority,
             String q,
             String view,
             LocalDate dueFrom,
-            LocalDate dueTo) {
+            LocalDate dueTo,
+            int page,
+            int size,
+            String sortBy,
+            @NonNull String sortDir) {
+        
         String pattern = null;
         if (q != null && !q.isBlank()) {
             String qNormalized = q.trim().toLowerCase();
@@ -114,20 +123,22 @@ public class TaskService {
             effectiveTo = dueTo;
         }
 
-        // Kiểm tra tính hợp lệ của khoảng ngày, nếu cả hai đều không null và from > to
-        // thì lỗi
+        // Kiểm tra tính hợp lệ của khoảng ngày, nếu cả hai đều không null và from > to thì lỗi
         if (effectiveFrom != null && effectiveTo != null && effectiveFrom.isAfter(effectiveTo)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid due date range: dueFrom is after dueTo");
         }
 
-        List<Task> tasks = taskRepository.searchTasks(
-            ownerId, 
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Task> tasks = taskRepository.searchTasks(ownerId, 
             completed, 
             priority, 
             effectiveFrom, 
             effectiveTo, 
-            pattern);
-        return tasks.stream().map(this::toResponse).toList();
+            pattern, 
+            pageable);
+        return tasks.map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -141,6 +152,7 @@ public class TaskService {
     public TaskResponse updateTask(long id, long ownerId, UpdateTaskRequest request) {
         Task task = taskRepository.findByIdAndOwnerId(id, ownerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found with id: " + id));
+        
         if (request.getTitle() != null && request.getTitle().isBlank()) // chặn blank nhưng cho null để không update
         {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Title must not be blank");

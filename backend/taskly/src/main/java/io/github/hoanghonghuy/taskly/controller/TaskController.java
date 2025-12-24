@@ -1,8 +1,8 @@
 package io.github.hoanghonghuy.taskly.controller;
 
 import java.time.LocalDate;
-import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,25 +37,30 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity<TaskResponse> createTask(JwtAuthenticationToken auth, 
-    @Valid @RequestBody CreateTaskRequest request) {
-        // Lấy ownerId từ token JWT
+    public ResponseEntity<TaskResponse> createTask(
+            JwtAuthenticationToken auth,
+            @Valid @RequestBody CreateTaskRequest request) {
         long ownerId = Long.parseLong(auth.getName());
-        TaskResponse createdTask = taskService.createTask(ownerId,request);
+        TaskResponse createdTask = taskService.createTask(ownerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
     @GetMapping
-    public List<TaskResponse> getTasks(
+    public Page<TaskResponse> getTasks(
             JwtAuthenticationToken auth,
             @RequestParam(required = false) Boolean completed,
             @RequestParam(required = false) Priority priority,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String view,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueTo) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueTo,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
         long ownerId = Long.parseLong(auth.getName());
-        return taskService.getTasks(ownerId, completed, priority, q, view, dueFrom, dueTo);
+        return taskService.getTasks(ownerId, completed, priority, q, view, dueFrom, dueTo, page, size, sortBy, sortDir);
     }
 
     @GetMapping("/{id}")
@@ -65,7 +70,10 @@ public class TaskController {
     }
 
     @PatchMapping("/{id}") // Sử dụng PATCH để cập nhật một phần
-    public TaskResponse updateTask(JwtAuthenticationToken auth, @PathVariable long id, @Valid @RequestBody UpdateTaskRequest request) {
+    public TaskResponse updateTask(
+            JwtAuthenticationToken auth,
+            @PathVariable long id,
+            @Valid @RequestBody UpdateTaskRequest request) {
         long ownerId = Long.parseLong(auth.getName());
         return taskService.updateTask(id, ownerId, request);
     }

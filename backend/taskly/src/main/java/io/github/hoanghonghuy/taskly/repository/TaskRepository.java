@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -42,13 +44,14 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                 or lower(coalesce(t.description, '')) like :pattern
               )
             """)
-    List<Task> searchTasks(
+    Page<Task> searchTasks(
             @Param("ownerId") long ownerId,
             @Param("completed") Boolean completed,
             @Param("priority") Priority priority,
             @Param("dueFrom") LocalDate dueFrom,
             @Param("dueTo") LocalDate dueTo,
-            @Param("pattern") String pattern);
+            @Param("pattern") String pattern,
+            Pageable pageable);
 
     Optional<Task> findByIdAndOwnerId(long id, long ownerId);
     boolean existsByIdAndOwnerId(long id, long ownerId);
