@@ -9,6 +9,9 @@ import org.springframework.web.server.ResponseStatusException;
 import io.github.hoanghonghuy.taskly.dto.auth.AuthResponse;
 import io.github.hoanghonghuy.taskly.dto.auth.LoginRequest;
 import io.github.hoanghonghuy.taskly.dto.auth.RegisterRequest;
+import io.github.hoanghonghuy.taskly.dto.auth.TokenRefreshRequest;
+import io.github.hoanghonghuy.taskly.dto.auth.TokenRefreshResponse;
+import io.github.hoanghonghuy.taskly.entity.RefreshToken;
 import io.github.hoanghonghuy.taskly.entity.User;
 import io.github.hoanghonghuy.taskly.repository.UserRepository;
 
@@ -17,13 +20,16 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthService(UserRepository userRepository, 
                     PasswordEncoder passwordEncoder, 
-                    JwtService jwtService) {
+                    JwtService jwtService,
+                    RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -49,6 +55,22 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
         String accessToken = jwtService.createAccessToken(user);
-        return new AuthResponse(accessToken, "Bearer", 60L * 60L);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        
+        return new AuthResponse(accessToken, "Bearer", 60L * 60L, refreshToken.getToken());
+    }
+
+    @Transactional
+    public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String accessToken = jwtService.createAccessToken(user);
+                    return new TokenRefreshResponse(accessToken, requestRefreshToken);
+                })
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Refresh token is not in database!"));
     }
 }

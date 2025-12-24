@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import io.github.hoanghonghuy.taskly.dto.auth.AuthResponse;
 import io.github.hoanghonghuy.taskly.dto.auth.LoginRequest;
 import io.github.hoanghonghuy.taskly.dto.auth.RegisterRequest;
+import io.github.hoanghonghuy.taskly.dto.auth.TokenRefreshRequest;
+import io.github.hoanghonghuy.taskly.dto.auth.TokenRefreshResponse;
 import io.github.hoanghonghuy.taskly.service.AuthService;
 import jakarta.validation.Valid;
 
@@ -33,5 +35,10 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/refresh-token")
+    public TokenRefreshResponse refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        return authService.refreshToken(request);
     }
 }
