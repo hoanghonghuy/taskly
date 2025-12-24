@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,35 +37,43 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody CreateTaskRequest request) {
-        TaskResponse createdTask = taskService.createTask(request);
+    public ResponseEntity<TaskResponse> createTask(JwtAuthenticationToken auth, 
+    @Valid @RequestBody CreateTaskRequest request) {
+        // Lấy ownerId từ token JWT
+        long ownerId = Long.parseLong(auth.getName());
+        TaskResponse createdTask = taskService.createTask(ownerId,request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
     @GetMapping
     public List<TaskResponse> getTasks(
+            JwtAuthenticationToken auth,
             @RequestParam(required = false) Boolean completed,
             @RequestParam(required = false) Priority priority,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String view,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueTo) {
-        return taskService.getTasks(completed, priority, q, view, dueFrom, dueTo);
+        long ownerId = Long.parseLong(auth.getName());
+        return taskService.getTasks(ownerId, completed, priority, q, view, dueFrom, dueTo);
     }
 
     @GetMapping("/{id}")
-    public TaskResponse getTaskById(@PathVariable long id) {
-        return taskService.getTaskById(id);
+    public TaskResponse getTaskById(JwtAuthenticationToken auth, @PathVariable long id) {
+        long ownerId = Long.parseLong(auth.getName());
+        return taskService.getTaskById(id, ownerId);
     }
 
     @PatchMapping("/{id}") // Sử dụng PATCH để cập nhật một phần
-    public TaskResponse updateTask(@PathVariable long id, @Valid @RequestBody UpdateTaskRequest request) {
-        return taskService.updateTask(id, request);
+    public TaskResponse updateTask(JwtAuthenticationToken auth, @PathVariable long id, @Valid @RequestBody UpdateTaskRequest request) {
+        long ownerId = Long.parseLong(auth.getName());
+        return taskService.updateTask(id, ownerId, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable long id) {
-        taskService.deleteTask(id);
+    public ResponseEntity<Void> deleteTask(JwtAuthenticationToken auth, @PathVariable long id) {
+        long ownerId = Long.parseLong(auth.getName());
+        taskService.deleteTask(id, ownerId);
         return ResponseEntity.noContent().build();
     }
 }

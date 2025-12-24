@@ -31,6 +31,8 @@ public class JwtService {
             .issuer(jwtProperties.issuer())
             .issuedAt(now)
             .expiresAt(expiresAt)
+            // set userId làm subject, 
+            // spring security khi validate token sẽ tạo Authentication với getName() trả về subject.
             .subject(user.getId().toString())
             .claim("email", user.getEmail()).build();
         

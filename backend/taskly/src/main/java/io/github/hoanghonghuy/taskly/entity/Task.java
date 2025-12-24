@@ -40,4 +40,8 @@ public class Task {
     @UpdateTimestamp // tự động cập nhật thời gian sửa đổi khi bản ghi được cập nhật
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false) // Nhiều Task thuộc về một User
+    @JoinColumn(name = "owner_id", nullable = false) // khóa ngoại tới bảng users
+    private User owner;
 }
