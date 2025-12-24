@@ -189,15 +189,12 @@ public class TaskService {
             task.setDueDate(request.getDueDate());
         }
         
-        if (request.getProjectId() != null) {
+        if (Boolean.TRUE.equals(request.getRemoveProject())) {
+            task.setProject(null);
+        } else if (request.getProjectId() != null) {
              Project project = projectRepository.findByIdAndOwnerId(request.getProjectId(), ownerId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
             task.setProject(project);
-        } else {
-            // Logic: nếu gửi projectId = null thì có thể hiểu là move về Inbox (hoặc không đổi - tuỳ logic)
-            // Ở đây giả sử update request có field này thì update, nếu không gửi thì không update. 
-            // Nếu muốn clear project (move to Inbox), client có thể gửi id=-1 hoặc logic khác.
-            // Tạm thời để đơn giản: không update nếu null.
         }
 
         // Task updatedTask = taskRepository.save(task);

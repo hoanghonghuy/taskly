@@ -26,4 +26,6 @@ public class UpdateTaskRequest {
     private LocalDate dueDate;
 
     private Long projectId;
+
+    private Boolean removeProject;
 }
