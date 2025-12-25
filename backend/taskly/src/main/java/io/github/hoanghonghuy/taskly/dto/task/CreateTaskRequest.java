@@ -26,4 +26,6 @@ public class CreateTaskRequest {
     private LocalDate dueDate;
 
     private Long projectId;
+
+    private Long parentId;
 }

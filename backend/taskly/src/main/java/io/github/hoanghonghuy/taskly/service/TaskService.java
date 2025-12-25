@@ -2,6 +2,7 @@ package io.github.hoanghonghuy.taskly.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -47,6 +48,14 @@ public class TaskService {
         if (task.getProject() != null) {
             response.setProjectId(task.getProject().getId());
         }
+        if (task.getParent() != null) {
+            response.setParentId(task.getParent().getId());
+        }
+        if (task.getSubTasks() != null && !task.getSubTasks().isEmpty()) {
+            response.setSubTasks(task.getSubTasks().stream()
+                    .map(this::toResponse)
+                    .collect(Collectors.toList()));
+        }
         response.setCreatedAt(task.getCreatedAt());
         response.setUpdatedAt(task.getUpdatedAt());
         return response;
@@ -73,6 +82,20 @@ public class TaskService {
             Project project = projectRepository.findByIdAndOwnerId(request.getProjectId(), ownerId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
             task.setProject(project);
+        }
+
+        if (request.getParentId() != null) {
+            Task parent = taskRepository.findByIdAndOwnerId(request.getParentId(), ownerId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Parent task not found"));
+            
+            // Validate: Không cho phép tạo subtask của subtask (độ sâu tối đa 1 cấp)
+            if (parent.getParent() != null) {
+                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Maximum subtask depth is 1");
+            }
+
+            task.setParent(parent);
+            // Kế thừa project từ parent
+            task.setProject(parent.getProject());
         }
         
         Task savedTask = taskRepository.save(task);
