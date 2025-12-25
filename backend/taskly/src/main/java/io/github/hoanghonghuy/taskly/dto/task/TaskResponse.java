@@ -22,6 +22,7 @@ public class TaskResponse {
     private Long parentId;
     private List<TaskResponse> subTasks;
     private List<TagResponse> tags;
+    private String recurrenceRule;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

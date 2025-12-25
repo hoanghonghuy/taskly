@@ -31,4 +31,6 @@ public class UpdateTaskRequest {
     private Boolean removeProject;
 
     private List<Long> tagIds;
+
+    private String recurrenceRule;
 }

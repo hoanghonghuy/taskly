@@ -86,4 +86,6 @@ public class Task {
         inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
     private Set<Tag> tags = new HashSet<>();
+
+    private String recurrenceRule;
 }

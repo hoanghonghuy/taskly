@@ -31,4 +31,6 @@ public class CreateTaskRequest {
     private Long parentId;
 
     private List<Long> tagIds;
+
+    private String recurrenceRule;
 }
