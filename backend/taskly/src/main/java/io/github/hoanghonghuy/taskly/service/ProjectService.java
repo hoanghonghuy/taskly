@@ -13,16 +13,20 @@ import io.github.hoanghonghuy.taskly.dto.project.UpdateProjectRequest;
 import io.github.hoanghonghuy.taskly.entity.Project;
 import io.github.hoanghonghuy.taskly.entity.User;
 import io.github.hoanghonghuy.taskly.repository.ProjectRepository;
+import io.github.hoanghonghuy.taskly.repository.TaskRepository;
 import io.github.hoanghonghuy.taskly.repository.UserRepository;
 
 @Service
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
 
-    public ProjectService(ProjectRepository projectRepository, UserRepository userRepository) {
+    public ProjectService(ProjectRepository projectRepository, UserRepository userRepository,
+            TaskRepository taskRepository) {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
+        this.taskRepository = taskRepository;
     }
 
     private ProjectResponse toResponse(Project project) {
@@ -38,7 +42,7 @@ public class ProjectService {
     public ProjectResponse createProject(long ownerId, CreateProjectRequest request) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-        
+
         Project project = new Project();
         project.setName(request.getName());
         project.setOwner(owner);
@@ -64,7 +68,7 @@ public class ProjectService {
     public ProjectResponse updateProject(long id, long ownerId, UpdateProjectRequest request) {
         Project project = projectRepository.findByIdAndOwnerId(id, ownerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
-        
+
         if (request.getName() != null) {
             project.setName(request.getName());
         }
@@ -76,8 +80,10 @@ public class ProjectService {
         if (!projectRepository.existsByIdAndOwnerId(id, ownerId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found");
         }
-        // TODO: Xử lý task thuộc project khi xoá project (Cascade delete hoặc set null)
-        // Hiện tại JPA sẽ báo lỗi ConstraintViolation nếu project đang có task
+
+        // Chuyển tất cả task sang Inbox (project = null) trước khi xóa
+        taskRepository.updateProjectToNullByProjectId(id);
+
         projectRepository.deleteById(id);
     }
 }
