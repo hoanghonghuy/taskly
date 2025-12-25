@@ -88,4 +88,6 @@ public class Task {
     private Set<Tag> tags = new HashSet<>();
 
     private String recurrenceRule;
+
+    private LocalDateTime reminderTime;
 }

@@ -1,6 +1,7 @@
 package io.github.hoanghonghuy.taskly.dto.task;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import io.github.hoanghonghuy.taskly.entity.Priority;
@@ -33,4 +34,6 @@ public class UpdateTaskRequest {
     private List<Long> tagIds;
 
     private String recurrenceRule;
+
+    private LocalDateTime reminderTime;
 }

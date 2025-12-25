@@ -23,6 +23,7 @@ public class TaskResponse {
     private List<TaskResponse> subTasks;
     private List<TagResponse> tags;
     private String recurrenceRule;
+    private LocalDateTime reminderTime;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -66,6 +66,8 @@ public class TaskService {
                     .map(tag -> new TagResponse(tag.getId(), tag.getName()))
                     .collect(Collectors.toList()));
         }
+        response.setRecurrenceRule(task.getRecurrenceRule());
+        response.setReminderTime(task.getReminderTime());
         response.setCreatedAt(task.getCreatedAt());
         response.setUpdatedAt(task.getUpdatedAt());
         return response;
@@ -87,6 +89,8 @@ public class TaskService {
             task.setPriority(request.getPriority());
         }
         task.setDueDate(request.getDueDate());
+        task.setRecurrenceRule(request.getRecurrenceRule());
+        task.setReminderTime(request.getReminderTime());
         
         if (request.getProjectId() != null) {
             Project project = projectRepository.findByIdAndOwnerId(request.getProjectId(), ownerId)
@@ -231,6 +235,12 @@ public class TaskService {
         }
         if (request.getDueDate() != null) {
             task.setDueDate(request.getDueDate());
+        }
+        if (request.getRecurrenceRule() != null) {
+            task.setRecurrenceRule(request.getRecurrenceRule());
+        }
+        if (request.getReminderTime() != null) {
+            task.setReminderTime(request.getReminderTime());
         }
         
         if (Boolean.TRUE.equals(request.getRemoveProject())) {
