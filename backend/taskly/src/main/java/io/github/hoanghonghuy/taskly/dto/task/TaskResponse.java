@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import io.github.hoanghonghuy.taskly.dto.tag.TagResponse;
 import io.github.hoanghonghuy.taskly.entity.Priority;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,7 @@ public class TaskResponse {
     private Long projectId;
     private Long parentId;
     private List<TaskResponse> subTasks;
+    private List<TagResponse> tags;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

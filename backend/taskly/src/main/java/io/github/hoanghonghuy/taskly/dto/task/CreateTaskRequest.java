@@ -1,6 +1,7 @@
 package io.github.hoanghonghuy.taskly.dto.task;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import io.github.hoanghonghuy.taskly.entity.Priority;
 import jakarta.validation.constraints.FutureOrPresent;
@@ -28,4 +29,6 @@ public class CreateTaskRequest {
     private Long projectId;
 
     private Long parentId;
+
+    private List<Long> tagIds;
 }

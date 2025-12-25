@@ -13,14 +13,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import io.github.hoanghonghuy.taskly.dto.tag.TagResponse;
 import io.github.hoanghonghuy.taskly.dto.task.CreateTaskRequest;
 import io.github.hoanghonghuy.taskly.dto.task.TaskResponse;
 import io.github.hoanghonghuy.taskly.dto.task.UpdateTaskRequest;
 import io.github.hoanghonghuy.taskly.entity.Priority;
 import io.github.hoanghonghuy.taskly.entity.Project;
+import io.github.hoanghonghuy.taskly.entity.Tag;
 import io.github.hoanghonghuy.taskly.entity.Task;
 import io.github.hoanghonghuy.taskly.entity.User;
 import io.github.hoanghonghuy.taskly.repository.ProjectRepository;
+import io.github.hoanghonghuy.taskly.repository.TagRepository;
 import io.github.hoanghonghuy.taskly.repository.TaskRepository;
 import io.github.hoanghonghuy.taskly.repository.UserRepository;
 
@@ -30,11 +33,13 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
+    private final TagRepository tagRepository;
 
-    public TaskService(TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository) {
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository, TagRepository tagRepository) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
+        this.tagRepository = tagRepository;
     }
 
     private TaskResponse toResponse(Task task) {
@@ -54,6 +59,11 @@ public class TaskService {
         if (task.getSubTasks() != null && !task.getSubTasks().isEmpty()) {
             response.setSubTasks(task.getSubTasks().stream()
                     .map(this::toResponse)
+                    .collect(Collectors.toList()));
+        }
+        if (task.getTags() != null && !task.getTags().isEmpty()) {
+            response.setTags(task.getTags().stream()
+                    .map(tag -> new TagResponse(tag.getId(), tag.getName()))
                     .collect(Collectors.toList()));
         }
         response.setCreatedAt(task.getCreatedAt());
@@ -96,6 +106,17 @@ public class TaskService {
             task.setParent(parent);
             // Kế thừa project từ parent
             task.setProject(parent.getProject());
+        }
+
+        if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
+            List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+            // Verify ownership of all tags
+            for (Tag tag : tags) {
+                if (!tag.getOwner().getId().equals(ownerId)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to tag: " + tag.getId());
+                }
+            }
+            task.getTags().addAll(tags);
         }
         
         Task savedTask = taskRepository.save(task);
@@ -218,6 +239,18 @@ public class TaskService {
              Project project = projectRepository.findByIdAndOwnerId(request.getProjectId(), ownerId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
             task.setProject(project);
+        }
+
+        if (request.getTagIds() != null) {
+            List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+            // Verify ownership
+            for (Tag tag : tags) {
+                if (!tag.getOwner().getId().equals(ownerId)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to tag: " + tag.getId());
+                }
+            }
+            task.getTags().clear();
+            task.getTags().addAll(tags);
         }
 
         // Task updatedTask = taskRepository.save(task);
