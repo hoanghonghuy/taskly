@@ -113,6 +113,7 @@ public class TaskService {
         }
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
+            @SuppressWarnings("null")
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
             // Verify ownership of all tags
             for (Tag tag : tags) {
@@ -191,6 +192,7 @@ public class TaskService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid due date range: dueFrom is after dueTo");
         }
 
+        @SuppressWarnings("null")
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -252,6 +254,7 @@ public class TaskService {
         }
 
         if (request.getTagIds() != null) {
+            @SuppressWarnings("null")
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
             // Verify ownership
             for (Tag tag : tags) {

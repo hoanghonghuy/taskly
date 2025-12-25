@@ -32,7 +32,7 @@ public class RefreshTokenService {
         return refreshTokenRepository.findByToken(token);
     }
 
-    public RefreshToken createRefreshToken(Long userId) {
+    public RefreshToken createRefreshToken(long userId) {
         RefreshToken refreshToken = new RefreshToken();
 
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
@@ -53,7 +53,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public int deleteByUserId(Long userId) {
+    public int deleteByUserId(long userId) {
         return refreshTokenRepository.deleteByUser(userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found")));
     }

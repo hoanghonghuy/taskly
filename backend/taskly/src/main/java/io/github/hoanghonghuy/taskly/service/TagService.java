@@ -31,7 +31,7 @@ public class TagService {
     }
 
     @Transactional
-    public TagResponse createTag(Long ownerId, CreateTagRequest request) {
+    public TagResponse createTag(long ownerId, CreateTagRequest request) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
@@ -54,7 +54,7 @@ public class TagService {
     }
 
     @Transactional
-    public void deleteTag(Long id, Long ownerId) {
+    public void deleteTag(long id, Long ownerId) {
         Tag tag = tagRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag not found"));
         
