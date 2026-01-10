@@ -41,6 +41,7 @@
 *.env
 backend/taskly/NOTES
 .roo-local/
+.local/
 
 # Spring Boot local overrides
 **/application-local.properties
