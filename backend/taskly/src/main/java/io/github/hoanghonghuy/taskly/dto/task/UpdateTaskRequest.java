@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import io.github.hoanghonghuy.taskly.entity.Priority;
+import io.github.hoanghonghuy.taskly.entity.RecurrenceFrequency;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -19,7 +20,7 @@ public class UpdateTaskRequest {
 
     @Size(max = 5000, message = "Description must not exceed 5000 characters")
     private String description;
-    
+
     private Boolean completed;
 
     private Priority priority;
@@ -33,7 +34,7 @@ public class UpdateTaskRequest {
 
     private List<Long> tagIds;
 
-    private String recurrenceRule;
+    private RecurrenceFrequency recurrenceRule;
 
     private LocalDateTime reminderTime;
 }

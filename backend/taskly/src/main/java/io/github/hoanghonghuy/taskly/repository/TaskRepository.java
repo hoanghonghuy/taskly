@@ -58,7 +58,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Optional<Task> findByIdAndOwnerId(long id, long ownerId);
     boolean existsByIdAndOwnerId(long id, long ownerId);
-    
+
+    @Query("SELECT t FROM Task t WHERE t.recurrenceRule != io.github.hoanghonghuy.taskly.entity.RecurrenceFrequency.NONE")
+    List<Task> findRecurringTasks();
+
     @Modifying
     @Query("UPDATE Task t SET t.project = null WHERE t.project.id = :projectId")
     void updateProjectToNullByProjectId(@Param("projectId") long projectId);

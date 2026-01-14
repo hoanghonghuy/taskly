@@ -87,7 +87,11 @@ public class Task {
     )
     private Set<Tag> tags = new HashSet<>();
 
-    private String recurrenceRule;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RecurrenceFrequency recurrenceRule = RecurrenceFrequency.NONE;
+
+    private LocalDate lastRecurrenceDate;
 
     private LocalDateTime reminderTime;
 }

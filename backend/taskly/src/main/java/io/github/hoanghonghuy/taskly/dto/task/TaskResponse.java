@@ -6,6 +6,7 @@ import java.util.List;
 
 import io.github.hoanghonghuy.taskly.dto.tag.TagResponse;
 import io.github.hoanghonghuy.taskly.entity.Priority;
+import io.github.hoanghonghuy.taskly.entity.RecurrenceFrequency;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,7 +23,7 @@ public class TaskResponse {
     private Long parentId;
     private List<TaskResponse> subTasks;
     private List<TagResponse> tags;
-    private String recurrenceRule;
+    private RecurrenceFrequency recurrenceRule;
     private LocalDateTime reminderTime;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
