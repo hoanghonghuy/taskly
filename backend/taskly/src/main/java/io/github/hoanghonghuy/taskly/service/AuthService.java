@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import io.github.hoanghonghuy.taskly.dto.UserResponse;
 import io.github.hoanghonghuy.taskly.dto.auth.AuthResponse;
 import io.github.hoanghonghuy.taskly.dto.auth.LoginRequest;
 import io.github.hoanghonghuy.taskly.dto.auth.RegisterRequest;
@@ -56,8 +57,15 @@ public class AuthService {
         }
         String accessToken = jwtService.createAccessToken(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
-        
-        return new AuthResponse(accessToken, "Bearer", 60L * 60L, refreshToken.getToken());
+
+        UserResponse userResponse = new UserResponse(
+            user.getId().toString(),
+            user.getEmail().split("@")[0], // Use email prefix as username
+            user.getEmail(),
+            user.getCreatedAt()
+        );
+
+        return new AuthResponse(accessToken, "Bearer", 60L * 60L, refreshToken.getToken(), userResponse);
     }
 
     @Transactional
