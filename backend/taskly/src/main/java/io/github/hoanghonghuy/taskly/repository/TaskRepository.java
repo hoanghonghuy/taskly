@@ -18,6 +18,7 @@ import io.github.hoanghonghuy.taskly.entity.Task;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByCompleted(boolean completed);
+    long countByCompleted(boolean completed);
 
     /**
      * JPQL search cho danh sách Task.
