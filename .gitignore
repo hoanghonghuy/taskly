@@ -37,7 +37,6 @@
 
 # Local env / secrets
 .env
-.env.*
 *.env
 backend/taskly/NOTES
 .roo-local/
