@@ -1,23 +1,49 @@
-import { useState, useMemo } from 'react';
-import { useCRUD } from '../hooks/useCRUD';
-import { taskApi } from '../lib/taskApi';
-import { projectApi } from '../lib/projectApi';
-import { tagApi } from '../lib/tagApi';
-import type { Task, CreateTaskRequest, Priority, Project, Tag, RecurrenceFrequency } from '../types';
-import { Plus, Check, Edit2, Trash2, Calendar, AlertCircle, Folder, Hash, Filter, X } from 'lucide-react';
-import Modal from '../components/Modal';
-import ConfirmDialog from '../components/ConfirmDialog';
+import { useState, useMemo } from "react";
+import { useCRUD } from "../hooks/useCRUD";
+import { taskApi } from "../lib/taskApi";
+import { projectApi } from "../lib/projectApi";
+import { tagApi } from "../lib/tagApi";
+import type {
+  Task,
+  CreateTaskRequest,
+  Priority,
+  Project,
+  Tag,
+  RecurrenceFrequency,
+} from "../types";
+import {
+  Plus,
+  Check,
+  Edit2,
+  Trash2,
+  Calendar,
+  AlertCircle,
+  Folder,
+  Hash,
+  Filter,
+  X,
+  Bell,
+} from "lucide-react";
+import Modal from "../components/Modal";
+import ConfirmDialog from "../components/ConfirmDialog";
 
-type FilterStatus = 'ALL' | 'ACTIVE' | 'COMPLETED';
-type FilterPriority = 'ALL' | 'LOW' | 'MEDIUM' | 'HIGH';
-type FilterDueDate = 'ALL' | 'OVERDUE' | 'TODAY' | 'UPCOMING';
+type FilterStatus = "ALL" | "ACTIVE" | "COMPLETED";
+type FilterPriority = "ALL" | "LOW" | "MEDIUM" | "HIGH";
+type FilterDueDate = "ALL" | "OVERDUE" | "TODAY" | "UPCOMING";
 
 interface TasksProps {
   onTaskChange?: () => void;
 }
 
 export default function Tasks({ onTaskChange }: TasksProps) {
-  const { items: tasks, loading, createItem, updateItem, deleteItem, refresh: refreshTasks } = useCRUD<Task>(taskApi, true);
+  const {
+    items: tasks,
+    loading,
+    createItem,
+    updateItem,
+    deleteItem,
+    refresh: refreshTasks,
+  } = useCRUD<Task>(taskApi, true);
   const { items: projects } = useCRUD<Project>(projectApi);
   const { items: tags } = useCRUD<Tag>(tagApi);
 
@@ -27,20 +53,21 @@ export default function Tasks({ onTaskChange }: TasksProps) {
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
   // Filter states
-  const [filterProject, setFilterProject] = useState<string>('');
-  const [filterTag, setFilterTag] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
-  const [filterPriority, setFilterPriority] = useState<FilterPriority>('ALL');
-  const [filterDueDate, setFilterDueDate] = useState<FilterDueDate>('ALL');
+  const [filterProject, setFilterProject] = useState<string>("");
+  const [filterTag, setFilterTag] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("ALL");
+  const [filterPriority, setFilterPriority] = useState<FilterPriority>("ALL");
+  const [filterDueDate, setFilterDueDate] = useState<FilterDueDate>("ALL");
 
   const [formData, setFormData] = useState<CreateTaskRequest>({
-    title: '',
-    description: '',
-    dueDate: '',
-    priority: 'MEDIUM',
-    recurrenceFrequency: 'NONE',
-    projectId: '',
+    title: "",
+    description: "",
+    dueDate: "",
+    priority: "MEDIUM",
+    recurrenceFrequency: "NONE",
+    projectId: "",
     tagIds: [],
+    reminderTime: undefined,
   });
 
   // Filter tasks
@@ -50,32 +77,34 @@ export default function Tasks({ onTaskChange }: TasksProps) {
       if (filterProject && task.project?.id !== filterProject) return false;
 
       // Filter by tag
-      if (filterTag && !task.tags?.some((t: Tag) => t.id === filterTag)) return false;
+      if (filterTag && !task.tags?.some((t: Tag) => t.id === filterTag))
+        return false;
 
       // Filter by status
-      if (filterStatus === 'ACTIVE' && task.completed) return false;
-      if (filterStatus === 'COMPLETED' && !task.completed) return false;
+      if (filterStatus === "ACTIVE" && task.completed) return false;
+      if (filterStatus === "COMPLETED" && !task.completed) return false;
 
       // Filter by priority
-      if (filterPriority !== 'ALL' && task.priority !== filterPriority) return false;
+      if (filterPriority !== "ALL" && task.priority !== filterPriority)
+        return false;
 
       // Filter by due date
-      if (filterDueDate !== 'ALL') {
+      if (filterDueDate !== "ALL") {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const taskDate = task.dueDate ? new Date(task.dueDate) : null;
 
-        if (filterDueDate === 'OVERDUE') {
+        if (filterDueDate === "OVERDUE") {
           if (!taskDate || task.completed) return false;
           if (taskDate >= today) return false;
-        } else if (filterDueDate === 'TODAY') {
+        } else if (filterDueDate === "TODAY") {
           if (!taskDate) return false;
           const taskDateStart = new Date(taskDate);
           taskDateStart.setHours(0, 0, 0, 0);
           const taskDateEnd = new Date(taskDate);
           taskDateEnd.setHours(23, 59, 59, 999);
           if (taskDateStart > today || taskDateEnd < today) return false;
-        } else if (filterDueDate === 'UPCOMING') {
+        } else if (filterDueDate === "UPCOMING") {
           if (!taskDate) return false;
           const taskDateStart = new Date(taskDate);
           taskDateStart.setHours(0, 0, 0, 0);
@@ -87,16 +116,28 @@ export default function Tasks({ onTaskChange }: TasksProps) {
 
       return true;
     });
-  }, [tasks, filterProject, filterTag, filterStatus, filterPriority, filterDueDate]);
+  }, [
+    tasks,
+    filterProject,
+    filterTag,
+    filterStatus,
+    filterPriority,
+    filterDueDate,
+  ]);
 
-  const hasActiveFilters = filterProject || filterTag || filterStatus !== 'ALL' || filterPriority !== 'ALL' || filterDueDate !== 'ALL';
+  const hasActiveFilters =
+    filterProject ||
+    filterTag ||
+    filterStatus !== "ALL" ||
+    filterPriority !== "ALL" ||
+    filterDueDate !== "ALL";
 
   const clearFilters = () => {
-    setFilterProject('');
-    setFilterTag('');
-    setFilterStatus('ALL');
-    setFilterPriority('ALL');
-    setFilterDueDate('ALL');
+    setFilterProject("");
+    setFilterTag("");
+    setFilterStatus("ALL");
+    setFilterPriority("ALL");
+    setFilterDueDate("ALL");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,16 +155,17 @@ export default function Tasks({ onTaskChange }: TasksProps) {
       setShowModal(false);
       setEditingTask(null);
       setFormData({
-        title: '',
-        description: '',
-        dueDate: '',
-        priority: 'MEDIUM',
-        recurrenceFrequency: 'NONE',
-        projectId: '',
+        title: "",
+        description: "",
+        dueDate: "",
+        priority: "MEDIUM",
+        recurrenceFrequency: "NONE",
+        projectId: "",
         tagIds: [],
+        reminderTime: undefined,
       });
     } catch (error) {
-      console.error('Failed to save task:', error);
+      console.error("Failed to save task:", error);
     }
   };
 
@@ -131,12 +173,13 @@ export default function Tasks({ onTaskChange }: TasksProps) {
     setEditingTask(task);
     setFormData({
       title: task.title,
-      description: task.description || '',
-      dueDate: task.dueDate || '',
+      description: task.description || "",
+      dueDate: task.dueDate || "",
       priority: task.priority,
       recurrenceFrequency: task.recurrenceFrequency,
-      projectId: task.project?.id || '',
-      tagIds: task.tags?.map(t => parseInt(t.id)) || [],
+      projectId: task.project?.id || "",
+      tagIds: task.tags?.map((t) => parseInt(t.id)) || [],
+      reminderTime: task.reminderTime || undefined,
     });
     setShowModal(true);
   };
@@ -167,7 +210,7 @@ export default function Tasks({ onTaskChange }: TasksProps) {
     if (currentTagIds.includes(tagIdNum)) {
       setFormData({
         ...formData,
-        tagIds: currentTagIds.filter(id => id !== tagIdNum),
+        tagIds: currentTagIds.filter((id) => id !== tagIdNum),
       });
     } else {
       setFormData({
@@ -179,9 +222,9 @@ export default function Tasks({ onTaskChange }: TasksProps) {
 
   const getPriorityColor = (priority: Priority) => {
     const colors = {
-      LOW: 'bg-green-100 text-green-700 border-green-200',
-      MEDIUM: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      HIGH: 'bg-red-100 text-red-700 border-red-200',
+      LOW: "bg-green-100 text-green-700 border-green-200",
+      MEDIUM: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      HIGH: "bg-red-100 text-red-700 border-red-200",
     };
     return colors[priority];
   };
@@ -207,13 +250,14 @@ export default function Tasks({ onTaskChange }: TasksProps) {
             onClick={() => {
               setEditingTask(null);
               setFormData({
-                title: '',
-                description: '',
-                dueDate: '',
-                priority: 'MEDIUM',
-                recurrenceFrequency: 'NONE',
-                projectId: '',
+                title: "",
+                description: "",
+                dueDate: "",
+                priority: "MEDIUM",
+                recurrenceFrequency: "NONE",
+                projectId: "",
                 tagIds: [],
+                reminderTime: undefined,
               });
               setShowModal(true);
             }}
@@ -284,7 +328,9 @@ export default function Tasks({ onTaskChange }: TasksProps) {
             {/* Priority filter */}
             <select
               value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value as FilterPriority)}
+              onChange={(e) =>
+                setFilterPriority(e.target.value as FilterPriority)
+              }
               className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="ALL">All Priorities</option>
@@ -296,7 +342,9 @@ export default function Tasks({ onTaskChange }: TasksProps) {
             {/* Due date filter */}
             <select
               value={filterDueDate}
-              onChange={(e) => setFilterDueDate(e.target.value as FilterDueDate)}
+              onChange={(e) =>
+                setFilterDueDate(e.target.value as FilterDueDate)
+              }
               className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="ALL">All Dates</option>
@@ -316,10 +364,14 @@ export default function Tasks({ onTaskChange }: TasksProps) {
           <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
             <Check className="w-10 h-10 mx-auto text-gray-400 mb-3" />
             <h3 className="text-base font-medium text-gray-900 mb-1">
-              {hasActiveFilters ? 'No tasks match your filters' : 'No tasks yet'}
+              {hasActiveFilters
+                ? "No tasks match your filters"
+                : "No tasks yet"}
             </h3>
             <p className="text-sm text-gray-600">
-              {hasActiveFilters ? 'Try adjusting your filters' : 'Create your first task to get started'}
+              {hasActiveFilters
+                ? "Try adjusting your filters"
+                : "Create your first task to get started"}
             </p>
           </div>
         ) : (
@@ -328,7 +380,9 @@ export default function Tasks({ onTaskChange }: TasksProps) {
               <div
                 key={task.id}
                 className={`group p-4 border rounded-lg hover:shadow-md transition ${
-                  task.completed ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-200'
+                  task.completed
+                    ? "bg-gray-50 border-gray-200"
+                    : "bg-white border-gray-200"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -336,8 +390,8 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                     onClick={() => handleToggleComplete(task)}
                     className={`mt-0.5 shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition ${
                       task.completed
-                        ? 'bg-green-500 border-green-500 text-white'
-                        : 'border-gray-300 hover:border-green-500'
+                        ? "bg-green-500 border-green-500 text-white"
+                        : "border-gray-300 hover:border-green-500"
                     }`}
                   >
                     {task.completed && <Check className="w-3.5 h-3.5" />}
@@ -346,18 +400,22 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                   <div className="flex-1 min-w-0">
                     <h3
                       className={`font-medium ${
-                        task.completed ? 'text-gray-500 line-through' : 'text-gray-900'
+                        task.completed
+                          ? "text-gray-500 line-through"
+                          : "text-gray-900"
                       }`}
                     >
                       {task.title}
                     </h3>
                     {task.description && (
-                      <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {task.description}
+                      </p>
                     )}
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(
-                          task.priority
+                          task.priority,
                         )}`}
                       >
                         {task.priority}
@@ -383,8 +441,8 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                               className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border"
                               style={{
                                 backgroundColor: `${tag.color}15`,
-                                borderColor: tag.color || '#8B5CF6',
-                                color: tag.color || '#8B5CF6',
+                                borderColor: tag.color || "#8B5CF6",
+                                color: tag.color || "#8B5CF6",
                               }}
                             >
                               <Hash className="w-3 h-3" />
@@ -396,11 +454,21 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                       {task.dueDate && (
                         <span
                           className={`flex items-center gap-1 text-xs ${
-                            isOverdue(task.dueDate) && !task.completed ? 'text-red-600' : 'text-gray-600'
+                            isOverdue(task.dueDate) && !task.completed
+                              ? "text-red-600"
+                              : "text-gray-600"
                           }`}
                         >
                           <Calendar className="w-3.5 h-3.5" />
                           {new Date(task.dueDate).toLocaleDateString()}
+                        </span>
+                      )}
+                      {task.reminderTime && (
+                        <span
+                          className="flex items-center gap-1 text-xs text-amber-600"
+                          title={`Reminder: ${new Date(task.reminderTime).toLocaleString()}`}
+                        >
+                          <Bell className="w-3.5 h-3.5" />
                         </span>
                       )}
                       {isOverdue(task.dueDate) && !task.completed && (
@@ -440,11 +508,14 @@ export default function Tasks({ onTaskChange }: TasksProps) {
           setShowModal(false);
           setEditingTask(null);
         }}
-        title={editingTask ? 'Edit Task' : 'Create Task'}
+        title={editingTask ? "Edit Task" : "Create Task"}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Title *
             </label>
             <input
@@ -452,20 +523,27 @@ export default function Tasks({ onTaskChange }: TasksProps) {
               type="text"
               required
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter task title"
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Description
             </label>
             <textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={3}
               placeholder="Enter task description"
@@ -473,13 +551,18 @@ export default function Tasks({ onTaskChange }: TasksProps) {
           </div>
 
           <div>
-            <label htmlFor="project" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="project"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Project
             </label>
             <select
               id="project"
               value={formData.projectId}
-              onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, projectId: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">No Project (Inbox)</option>
@@ -503,8 +586,8 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                     key={tag.id}
                     className={`flex items-center gap-2 px-3 py-2 rounded-full border cursor-pointer transition ${
                       formData.tagIds?.includes(tagIdNum)
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-300 hover:border-purple-400'
+                        ? "border-purple-500 bg-purple-50"
+                        : "border-gray-300 hover:border-purple-400"
                     }`}
                   >
                     <input
@@ -515,7 +598,7 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                     />
                     <div
                       className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: tag.color || '#8B5CF6' }}
+                      style={{ backgroundColor: tag.color || "#8B5CF6" }}
                     />
                     <span className="text-xs font-medium">{tag.name}</span>
                   </label>
@@ -528,26 +611,39 @@ export default function Tasks({ onTaskChange }: TasksProps) {
           </div>
 
           <div>
-            <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="dueDate"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Due Date
             </label>
             <input
               id="dueDate"
               type="date"
               value={formData.dueDate}
-              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, dueDate: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="priority"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Priority
             </label>
             <select
               id="priority"
               value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  priority: e.target.value as Priority,
+                })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="LOW">Low</option>
@@ -557,13 +653,21 @@ export default function Tasks({ onTaskChange }: TasksProps) {
           </div>
 
           <div>
-            <label htmlFor="recurrence" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="recurrence"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Recurrence
             </label>
             <select
               id="recurrence"
               value={formData.recurrenceFrequency}
-              onChange={(e) => setFormData({ ...formData, recurrenceFrequency: e.target.value as RecurrenceFrequency })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  recurrenceFrequency: e.target.value as RecurrenceFrequency,
+                })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="NONE">None</option>
@@ -572,6 +676,33 @@ export default function Tasks({ onTaskChange }: TasksProps) {
               <option value="MONTHLY">Monthly</option>
               <option value="YEARLY">Yearly</option>
             </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="reminder"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Reminder (Optional)
+            </label>
+            <input
+              id="reminder"
+              type="datetime-local"
+              value={
+                formData.reminderTime
+                  ? new Date(formData.reminderTime).toISOString().slice(0, 16)
+                  : ""
+              }
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  reminderTime: e.target.value
+                    ? e.target.value + ":00"
+                    : undefined,
+                })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -586,7 +717,7 @@ export default function Tasks({ onTaskChange }: TasksProps) {
               type="submit"
               className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
             >
-              {editingTask ? 'Update' : 'Create'}
+              {editingTask ? "Update" : "Create"}
             </button>
           </div>
         </form>

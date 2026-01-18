@@ -25,8 +25,13 @@ export interface User {
 }
 
 // Task types
-export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
-export type RecurrenceFrequency = 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+export type Priority = "LOW" | "MEDIUM" | "HIGH";
+export type RecurrenceFrequency =
+  | "NONE"
+  | "DAILY"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "YEARLY";
 
 export interface CreateTaskRequest {
   title: string;
@@ -36,6 +41,7 @@ export interface CreateTaskRequest {
   projectId?: string;
   tagIds?: number[];
   recurrenceFrequency?: RecurrenceFrequency;
+  reminderTime?: string;
 }
 
 export interface UpdateTaskRequest {
@@ -47,6 +53,7 @@ export interface UpdateTaskRequest {
   projectId?: string;
   tagIds?: number[];
   recurrenceFrequency?: RecurrenceFrequency;
+  reminderTime?: string;
 }
 
 export interface Task {
@@ -62,6 +69,7 @@ export interface Task {
   tags?: Tag[];
   recurrenceFrequency: RecurrenceFrequency;
   lastRecurrenceDate?: string;
+  reminderTime?: string;
 }
 
 // Project types
