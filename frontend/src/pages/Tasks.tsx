@@ -23,6 +23,9 @@ import {
   Filter,
   X,
   Bell,
+  ChevronDown,
+  ChevronRight,
+  PlusCircle,
 } from "lucide-react";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -51,6 +54,7 @@ export default function Tasks({ onTaskChange }: TasksProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
 
   // Filter states
   const [filterProject, setFilterProject] = useState<string>("");
@@ -68,11 +72,15 @@ export default function Tasks({ onTaskChange }: TasksProps) {
     projectId: "",
     tagIds: [],
     reminderTime: undefined,
+    parentId: undefined,
   });
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((task: Task) => {
+      // Hide sub-tasks from main list (they will be shown under parent)
+      if (task.parentId) return false;
+
       // Filter by project
       if (filterProject && task.project?.id !== filterProject) return false;
 
@@ -163,6 +171,7 @@ export default function Tasks({ onTaskChange }: TasksProps) {
         projectId: "",
         tagIds: [],
         reminderTime: undefined,
+        parentId: undefined,
       });
     } catch (error) {
       console.error("Failed to save task:", error);
@@ -220,6 +229,34 @@ export default function Tasks({ onTaskChange }: TasksProps) {
     }
   };
 
+  const handleAddSubTask = (parentTask: Task) => {
+    setEditingTask(null);
+    setFormData({
+      title: "",
+      description: "",
+      dueDate: "",
+      priority: "MEDIUM",
+      recurrenceFrequency: "NONE",
+      projectId: parentTask.project?.id || "",
+      tagIds: [],
+      reminderTime: undefined,
+      parentId: parentTask.id,
+    });
+    setShowModal(true);
+  };
+
+  const handleToggleExpand = (taskId: string) => {
+    setExpandedTasks((prev) => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(taskId)) {
+        newExpanded.delete(taskId);
+      } else {
+        newExpanded.add(taskId);
+      }
+      return newExpanded;
+    });
+  };
+
   const getPriorityColor = (priority: Priority) => {
     const colors = {
       LOW: "bg-green-100 text-green-700 border-green-200",
@@ -258,6 +295,7 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                 projectId: "",
                 tagIds: [],
                 reminderTime: undefined,
+                parentId: undefined,
               });
               setShowModal(true);
             }}
@@ -386,6 +424,22 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                 }`}
               >
                 <div className="flex items-start gap-3">
+                  {/* Expand/Collapse button for sub-tasks */}
+                  {task.subTasks && task.subTasks.length > 0 && (
+                    <button
+                      onClick={() => handleToggleExpand(task.id)}
+                      className="mt-0.5 shrink-0 p-0.5 text-gray-400 hover:text-gray-600 transition"
+                    >
+                      {expandedTasks.has(task.id) ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+                  <div className="shrink-0 w-1">
+                    {/* Spacer when no expand button */}
+                  </div>
                   <button
                     onClick={() => handleToggleComplete(task)}
                     className={`mt-0.5 shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition ${
@@ -493,8 +547,102 @@ export default function Tasks({ onTaskChange }: TasksProps) {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+                    <button
+                      onClick={() => handleAddSubTask(task)}
+                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition"
+                      title="Add sub-task"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
+
+                {/* Sub-tasks display */}
+                {task.subTasks &&
+                  task.subTasks.length > 0 &&
+                  expandedTasks.has(task.id) && (
+                    <div className="mt-3 ml-8 space-y-2">
+                      {task.subTasks.map((subTask: Task) => (
+                        <div
+                          key={subTask.id}
+                          className={`p-3 border rounded-lg hover:shadow-sm transition ${
+                            subTask.completed
+                              ? "bg-gray-50 border-gray-200"
+                              : "bg-white border-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <button
+                              onClick={() => handleToggleComplete(subTask)}
+                              className={`mt-0 shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition ${
+                                subTask.completed
+                                  ? "bg-green-500 border-green-500 text-white"
+                                  : "border-gray-300 hover:border-green-500"
+                              }`}
+                            >
+                              {subTask.completed && (
+                                <Check className="w-3 h-3" />
+                              )}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <h4
+                                className={`text-sm font-medium ${
+                                  subTask.completed
+                                    ? "text-gray-500 line-through"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                {subTask.title}
+                              </h4>
+                              {(subTask.dueDate ||
+                                subTask.priority !== "MEDIUM") && (
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                  {subTask.priority !== "MEDIUM" && (
+                                    <span
+                                      className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getPriorityColor(
+                                        subTask.priority,
+                                      )}`}
+                                    >
+                                      {subTask.priority}
+                                    </span>
+                                  )}
+                                  {subTask.dueDate && (
+                                    <span
+                                      className={`flex items-center gap-0.5 text-xs ${
+                                        isOverdue(subTask.dueDate) &&
+                                        !subTask.completed
+                                          ? "text-red-600"
+                                          : "text-gray-600"
+                                      }`}
+                                    >
+                                      <Calendar className="w-3 h-3" />
+                                      {new Date(
+                                        subTask.dueDate,
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                              <button
+                                onClick={() => handleEdit(subTask)}
+                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(subTask.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </div>
             ))}
           </div>
@@ -511,6 +659,15 @@ export default function Tasks({ onTaskChange }: TasksProps) {
         title={editingTask ? "Edit Task" : "Create Task"}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Show info message when creating sub-task */}
+          {formData.parentId && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-800">
+                You are creating a sub-task. Sub-tasks inherit the project from
+                their parent.
+              </p>
+            </div>
+          )}
           <div>
             <label
               htmlFor="title"

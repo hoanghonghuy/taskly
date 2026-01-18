@@ -42,6 +42,7 @@ export interface CreateTaskRequest {
   tagIds?: number[];
   recurrenceFrequency?: RecurrenceFrequency;
   reminderTime?: string;
+  parentId?: string;
 }
 
 export interface UpdateTaskRequest {
@@ -70,6 +71,8 @@ export interface Task {
   recurrenceFrequency: RecurrenceFrequency;
   lastRecurrenceDate?: string;
   reminderTime?: string;
+  parentId?: string;
+  subTasks?: Task[];
 }
 
 // Project types
