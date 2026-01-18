@@ -58,6 +58,8 @@ public class ProjectService {
 
         Project project = new Project();
         project.setName(request.getName());
+        project.setDescription(request.getDescription());
+        project.setColor(request.getColor());
         project.setOwner(owner);
         return toResponse(projectRepository.save(project));
     }

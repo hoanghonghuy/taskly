@@ -1,18 +1,6 @@
 package io.github.hoanghonghuy.taskly.service;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
+import io.github.hoanghonghuy.taskly.dto.project.ProjectResponse;
 import io.github.hoanghonghuy.taskly.dto.tag.TagResponse;
 import io.github.hoanghonghuy.taskly.dto.task.CreateTaskRequest;
 import io.github.hoanghonghuy.taskly.dto.task.TaskResponse;
@@ -26,6 +14,17 @@ import io.github.hoanghonghuy.taskly.repository.ProjectRepository;
 import io.github.hoanghonghuy.taskly.repository.TagRepository;
 import io.github.hoanghonghuy.taskly.repository.TaskRepository;
 import io.github.hoanghonghuy.taskly.repository.UserRepository;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class TaskService {
@@ -35,7 +34,12 @@ public class TaskService {
     private final ProjectRepository projectRepository;
     private final TagRepository tagRepository;
 
-    public TaskService(TaskRepository taskRepository, UserRepository userRepository, ProjectRepository projectRepository, TagRepository tagRepository) {
+    public TaskService(
+        TaskRepository taskRepository,
+        UserRepository userRepository,
+        ProjectRepository projectRepository,
+        TagRepository tagRepository
+    ) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
@@ -51,20 +55,36 @@ public class TaskService {
         response.setPriority(task.getPriority());
         response.setDueDate(task.getDueDate());
         if (task.getProject() != null) {
-            response.setProjectId(task.getProject().getId());
+            Project project = task.getProject();
+            ProjectResponse projectResponse = new ProjectResponse();
+            projectResponse.setId(project.getId());
+            projectResponse.setName(project.getName());
+            projectResponse.setDescription(project.getDescription());
+            projectResponse.setColor(project.getColor());
+            projectResponse.setCreatedAt(project.getCreatedAt());
+            projectResponse.setUpdatedAt(project.getUpdatedAt());
+            response.setProject(projectResponse);
         }
         if (task.getParent() != null) {
             response.setParentId(task.getParent().getId());
         }
         if (task.getSubTasks() != null && !task.getSubTasks().isEmpty()) {
-            response.setSubTasks(task.getSubTasks().stream()
+            response.setSubTasks(
+                task
+                    .getSubTasks()
+                    .stream()
                     .map(this::toResponse)
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList())
+            );
         }
         if (task.getTags() != null && !task.getTags().isEmpty()) {
-            response.setTags(task.getTags().stream()
+            response.setTags(
+                task
+                    .getTags()
+                    .stream()
                     .map(tag -> new TagResponse(tag.getId(), tag.getName()))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList())
+            );
         }
         response.setRecurrenceRule(task.getRecurrenceRule());
         response.setReminderTime(task.getReminderTime());
@@ -74,10 +94,15 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponse createTask(long ownerId, 
-    CreateTaskRequest request) {
-        User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+    public TaskResponse createTask(long ownerId, CreateTaskRequest request) {
+        User owner = userRepository
+            .findById(ownerId)
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User not found"
+                )
+            );
 
         Task task = new Task();
         task.setOwner(owner);
@@ -91,20 +116,35 @@ public class TaskService {
         task.setDueDate(request.getDueDate());
         task.setRecurrenceRule(request.getRecurrenceRule());
         task.setReminderTime(request.getReminderTime());
-        
+
         if (request.getProjectId() != null) {
-            Project project = projectRepository.findByIdAndOwnerId(request.getProjectId(), ownerId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+            Project project = projectRepository
+                .findByIdAndOwnerId(request.getProjectId(), ownerId)
+                .orElseThrow(() ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Project not found"
+                    )
+                );
             task.setProject(project);
         }
 
         if (request.getParentId() != null) {
-            Task parent = taskRepository.findByIdAndOwnerId(request.getParentId(), ownerId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Parent task not found"));
-            
+            Task parent = taskRepository
+                .findByIdAndOwnerId(request.getParentId(), ownerId)
+                .orElseThrow(() ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Parent task not found"
+                    )
+                );
+
             // Validate: Không cho phép tạo subtask của subtask (độ sâu tối đa 1 cấp)
             if (parent.getParent() != null) {
-                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Maximum subtask depth is 1");
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Maximum subtask depth is 1"
+                );
             }
 
             task.setParent(parent);
@@ -118,12 +158,15 @@ public class TaskService {
             // Verify ownership of all tags
             for (Tag tag : tags) {
                 if (!tag.getOwner().getId().equals(ownerId)) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to tag: " + tag.getId());
+                    throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Access denied to tag: " + tag.getId()
+                    );
                 }
             }
             task.getTags().addAll(tags);
         }
-        
+
         Task savedTask = taskRepository.save(task);
 
         return toResponse(savedTask);
@@ -131,19 +174,19 @@ public class TaskService {
 
     @Transactional(readOnly = true) // Chỉ đọc dữ liệu
     public Page<TaskResponse> getTasks(
-            long ownerId,
-            Long projectId,
-            Boolean completed,
-            Priority priority,
-            String q,
-            String view,
-            LocalDate dueFrom,
-            LocalDate dueTo,
-            int page,
-            int size,
-            String sortBy,
-            String sortDir) {
-        
+        long ownerId,
+        Long projectId,
+        Boolean completed,
+        Priority priority,
+        String q,
+        String view,
+        LocalDate dueFrom,
+        LocalDate dueTo,
+        int page,
+        int size,
+        String sortBy,
+        String sortDir
+    ) {
         String pattern = null;
         if (q != null && !q.isBlank()) {
             String qNormalized = q.trim().toLowerCase();
@@ -173,7 +216,10 @@ public class TaskService {
                     baseTo = today.minusDays(1);
                     break;
                 default:
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid view parameter: " + view);
+                    throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Invalid view parameter: " + view
+                    );
             }
         }
 
@@ -188,40 +234,69 @@ public class TaskService {
         }
 
         // Kiểm tra tính hợp lệ của khoảng ngày, nếu cả hai đều không null và from > to thì lỗi
-        if (effectiveFrom != null && effectiveTo != null && effectiveFrom.isAfter(effectiveTo)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid due date range: dueFrom is after dueTo");
+        if (
+            effectiveFrom != null &&
+            effectiveTo != null &&
+            effectiveFrom.isAfter(effectiveTo)
+        ) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Invalid due date range: dueFrom is after dueTo"
+            );
         }
 
         @SuppressWarnings("null")
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<Task> tasks = taskRepository.searchTasks(ownerId, 
+        Page<Task> tasks = taskRepository.searchTasks(
+            ownerId,
             projectId,
-            completed, 
-            priority, 
-            effectiveFrom, 
-            effectiveTo, 
-            pattern, 
-            pageable);
+            completed,
+            priority,
+            effectiveFrom,
+            effectiveTo,
+            pattern,
+            pageable
+        );
         return tasks.map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
     public TaskResponse getTaskById(long id, long ownerId) {
-        Task task = taskRepository.findByIdAndOwnerId(id, ownerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found with id: " + id));
+        Task task = taskRepository
+            .findByIdAndOwnerId(id, ownerId)
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Task not found with id: " + id
+                )
+            );
         return toResponse(task);
     }
 
     @Transactional
-    public TaskResponse updateTask(long id, long ownerId, UpdateTaskRequest request) {
-        Task task = taskRepository.findByIdAndOwnerId(id, ownerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found with id: " + id));
-        
-        if (request.getTitle() != null && request.getTitle().isBlank()) // chặn blank nhưng cho null để không update
-        {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Title must not be blank");
+    public TaskResponse updateTask(
+        long id,
+        long ownerId,
+        UpdateTaskRequest request
+    ) {
+        Task task = taskRepository
+            .findByIdAndOwnerId(id, ownerId)
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Task not found with id: " + id
+                )
+            );
+
+        if (
+            request.getTitle() != null && request.getTitle().isBlank() // chặn blank nhưng cho null để không update
+        ) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Title must not be blank"
+            );
         }
         if (request.getTitle() != null) {
             task.setTitle(request.getTitle());
@@ -244,12 +319,18 @@ public class TaskService {
         if (request.getReminderTime() != null) {
             task.setReminderTime(request.getReminderTime());
         }
-        
+
         if (Boolean.TRUE.equals(request.getRemoveProject())) {
             task.setProject(null);
         } else if (request.getProjectId() != null) {
-             Project project = projectRepository.findByIdAndOwnerId(request.getProjectId(), ownerId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+            Project project = projectRepository
+                .findByIdAndOwnerId(request.getProjectId(), ownerId)
+                .orElseThrow(() ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Project not found"
+                    )
+                );
             task.setProject(project);
         }
 
@@ -259,7 +340,10 @@ public class TaskService {
             // Verify ownership
             for (Tag tag : tags) {
                 if (!tag.getOwner().getId().equals(ownerId)) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to tag: " + tag.getId());
+                    throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Access denied to tag: " + tag.getId()
+                    );
                 }
             }
             task.getTags().clear();
@@ -273,9 +357,11 @@ public class TaskService {
     @Transactional
     public void deleteTask(long id, long ownerId) {
         if (!taskRepository.existsByIdAndOwnerId(id, ownerId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found with id: " + id);
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Task not found with id: " + id
+            );
         }
         taskRepository.deleteById(id);
     }
-
 }
